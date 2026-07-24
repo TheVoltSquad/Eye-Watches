@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>VoltDar Radar v4</title>
+        <link rel="icon" type="image/png" href="VoltDar Logo.png" />
+
+        <!--Metadata-->
+        <meta name="og:title" content="VoltDar Radar v4" />
+        <meta name="og:image" content="VoltDar Logo.png" />
+        <meta name="description" content="Private use for The Volt Squad, Outbreak Weather, and Storm Team 4, or the others" />
+
+        <!-- MapLibre GL JS CSS (non-blocking preload then apply) -->
+        <link rel="preload" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" as="style" onload="this.rel='stylesheet'">
+        <noscript><link href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet"></noscript>
+        <!-- MapLibre GL JS (deferred so it doesn't block other scripts) -->
+        <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js" defer></script>
+        <!-- Tabler Icons (non-blocking preload) -->
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.35.0/dist/tabler-icons.min.css" as="style" onload="this.rel='stylesheet'">
+        <noscript><link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.35.0/dist/tabler-icons.min.css" rel="stylesheet"></noscript>
+        <!-- Entry point (module scripts are deferred by default) -->
+        <script type="module" src="src/entry.js"></script>
+        <!-- Onest font (non-blocking preload) -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="preload" href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap" as="style" onload="this.rel='stylesheet'">
+        <noscript><link href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap" rel="stylesheet"></noscript>
+        <!-- Bebas Neue (site-wide, non-blocking preload) -->
+        <link rel="preload" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" as="style" onload="this.rel='stylesheet'">
+        <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet"></noscript>
+
+        <!-- Main stylesheet -->
+        <link rel="stylesheet" href="style.css" />
+
+        <!--SimpleAnalytics-->
+        <!-- 100% privacy-first analytics -->
+        <script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+        
+    </head>
+
+    <body>
+        <div id="app">
+            <div id="map"></div>
+
+            <!-- NWS Alerts list -->
+            <div id="nws-alerts-list">
+                <div id="nws-alerts-list-content"></div>
+            </div>
+
+            <!-- Alert Summary Panel -->
+            <div id="alertSummaryPanel" style="display:none;position:absolute;top:34px;right:40px;z-index:1000;min-width:300px;max-width:300px;border-radius:12px;box-shadow:0 2px 16px rgba(0, 0, 0, 0);background:none;">
+                <div id="alertSummaryTitle" style="font-size:24px;font-weight:bold;color:rgb(255, 255, 255);padding:15px 15px 0 15px;"></div>
+                <div id="alertSummaryContent"></div>
+            </div>
+
+            <!-- Report Summary Panel -->
+            <div id="reportSummaryPanel" style="display:none;position:absolute;top:34px;right:40px;z-index:1000;min-width:300px;max-width:300px;border-radius:12px;box-shadow:0 2px 16px rgba(0, 0, 0, 0);background:none;">
+                <div id="reportSummaryTitle" style="font-size:24px;font-weight:bold;color:rgb(255, 255, 255);padding:15px 15px 0 15px;"></div>
+                <div id="reportSummaryContent"></div>
+            </div>
+
+            <!-- Alert Description Overlay -->
+            <div id="alertDescriptionOverlay" style="display:none;">
+                <div class="alert-description-card">
+                    <div id="alertDescriptionHeader"></div>
+                    <div id="alertDescriptionText"></div>
+                    <div class="alert-description-footer">
+                        <button id="closeAlertDescriptionBtn">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert Color Button -->
+            <button id="changeAlertColorsBtn">Change Alert Colors</button>
+
+            <!-- WarnGen Menu (hidden by default) -->
+            <div id="menu">
+                <button id="closeWarnGenMenuBtn" style="position:absolute;top:8px;right:8px;background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;">&times;</button>
+                <ul>
+                    <li><button id="drawPolygonBtn">Draw Polygon</button></li>
+                    <li><img id="warnGenImage" src="" alt="WarnGen Interface"></li>
+                    <li>
+                        <h3>Type of Alert</h3>
+                        <select id="alertType">
+                          <option value="TEST">TEST</option>
+                          <option value="Severe Thunderstorm">Severe Thunderstorm</option>
+                          <option value="Considerable Severe Thunderstorm">Considerable Severe Thunderstorm</option>
+                          <option value="Destructive Severe Thunderstorm">Destructive Severe Thunderstorm</option>
+                          <option value="Tornado">Tornado</option>
+                          <option value="Observed Tornado">Observed Tornado</option>
+                          <option value="PDS Tornado">PDS Tornado</option>
+                          <option value="Tornado Emergency">Tornado Emergency</option>
+                          <option value="Flash Flood">Flash Flood</option>
+                          <option value="Considerable Flash Flood">Considerable Flash Flood</option>
+                          <option value="Flash Flood Emergency">Flash Flood Emergency</option>
+                        </select>
+                    </li>
+                    <li id="hailThreatsList">
+                        <h3>Hail Threats</h3>
+                        <label><input type="checkbox" value="pea"> Pea size hail (.125")</label><br>
+                        <label><input type="checkbox" value="penny"> Penny size hail (.75")</label><br>
+                        <label><input type="checkbox" value="nickel"> Nickel size hail (.875")</label><br>
+                        <label><input type="checkbox" value="quarter"> Quarter size hail (1.00")</label><br>
+                        <label><input type="checkbox" value="halfDollar"> Half dollar size hail (1.25")</label><br>
+                        <label><input type="checkbox" value="pingPong"> Ping pong ball size hail (1.50")</label><br>
+                        <label><input type="checkbox" value="golfBall"> Golf ball size hail (1.75")</label><br>
+                        <label><input type="checkbox" value="twoInch"> Two inch hail (2.00")</label><br>
+                        <label><input type="checkbox" value="tennisBall"> Tennis ball size hail (2.50")</label><br>
+                        <label><input type="checkbox" value="baseball"> Baseball size hail (2.75")</label><br>
+                        <label><input type="checkbox" value="apple"> Apple size hail (3.00")</label><br>
+                        <label><input type="checkbox" value="softball"> Softball size hail (4.00")</label><br>
+                        <label><input type="checkbox" value="dvd"> DVD size hail (5.00+)"></label>
+                    </li>
+                    <li>
+                        <h3>Wind Threats (mph)</h3>
+                        <div class="inline-checkbox">
+                          <label><input type="checkbox" value="50"> 50</label>
+                          <label><input type="checkbox" value="55"> 55</label>
+                          <label><input type="checkbox" value="60"> 60</label>
+                          <label><input type="checkbox" value="65"> 65</label>
+                          <label><input type="checkbox" value="70"> 70</label>
+                          <label><input type="checkbox" value="75"> 75</label>
+                          <label><input type="checkbox" value="80"> 80</label>
+                          <label><input type="checkbox" value="85"> 85</label>
+                          <label><input type="checkbox" value="90"> 90</label>
+                          <label><input type="checkbox" value="95"> 95</label>
+                          <label><input type="checkbox" value="100"> 100</label>
+                        </div>
+                    </li>
+                    <li id="basisList">
+                        <h3>Basis for Warnings</h3>
+                        <label><input type="checkbox" value="Doppler Radar Indicated"> Doppler Radar Indicated</label><br>
+                        <label><input type="checkbox" value="Weather Spotters Reported"> Weather Spotters Reported</label><br>
+                        <label><input type="checkbox" value="Law Enforcement Reported"> Law Enforcement Reported</label><br>
+                        <label><input type="checkbox" value="Emergency Management Reported"> Emergency Management Reported</label><br>
+                        <label><input type="checkbox" value="Broadcast Media Reported"> Broadcast Media Reported</label><br>
+                        <label><input type="checkbox" value="Mesonet Reported"> Mesonet Reported</label><br>
+                        <label><input type="checkbox" value="Public Reported"> Public Reported</label><br>
+                        <label><input type="checkbox" value="Radar Confirmed"> Radar Confirmed</label>
+                        <label><input type="checkbox" value="Automated Gauges Reported"> Automated Gauges Reported</label>
+                        <label><input type="checkbox" value="Satellite Indicated"> Satellite Indicated</label>
+                    </li>
+                    <li id="tornadoCheckboxList">
+                        <h3>Tornado</h3>
+                        <label><input type="checkbox" value="Possible"> Possible</label><br>
+                        <label><input type="checkbox" value="On the Ground"> On the Ground</label><br>
+                    </li>
+                    <li id="tornadoWindSpeedContainer" style="display:none;">
+                        <h3>Tornado Wind Speed</h3>
+                        <select id="tornadoWindSpeed">
+                          <option value="">Select Speed</option>
+                          <option value="EF0 INTENSITY 65-85 MPH">EF0 INTENSITY 65-85 MPH</option>
+                          <option value="EF1 INTENSITY 86-110 MPH">EF1 INTENSITY 86-110 MPH</option>
+                          <option value="EF2 INTENSITY 111-135 MPH">EF2 INTENSITY 111-135 MPH</option>
+                          <option value="EF3 INTENSITY 136-165 MPH">EF3 INTENSITY 136-165 MPH</option>
+                          <option value="EF4 INTENSITY 166-200 MPH">EF4 INTENSITY 166-200 MPH</option>
+                          <option value="EF5 INTENSITY >200 MPH">EF5 INTENSITY >200 MPH</option>
+                        </select>
+                    </li>
+                    <li>
+                        <h3>Expire In (minutes)</h3>
+                        <select id="expiration">
+                          <option value="5">5 Minutes</option>
+                          <option value="10">10 Minutes</option>
+                          <option value="15">15 Minutes</option>
+                          <option value="20">20 Minutes</option>
+                          <option value="25">25 Minutes</option>
+                          <option value="30">30 Minutes</option>
+                          <option value="35">35 Minutes</option>
+                          <option value="40">40 Minutes</option>
+                          <option value="45">45 Minutes</option>
+                          <option value="50">50 Minutes</option>
+                          <option value="55">55 Minutes</option>
+                          <option value="60">60 (1 Hour)</option>
+                          <option value="65">65 (1 Hour And 5 Minutes)</option>
+                          <option value="70">70 (1 Hour And 10 Minutes)</option>
+                          <option value="75">75 (1 Hour And 15 Minutes)</option>
+<option value="80">80 (1 Hour And 20 Minutes)</option>
+<option value="85">85 (1 Hour And 25 Minutes)</option>
+<option value="90">90 (1 Hour And 30 Minutes)</option>
+<option value="95">95 (1 Hour And 35 Minutes)</option>
+<option value="100">100 (1 Hour And 40 Minutes)</option>
+<option value="105">105 (1 Hour And 45 Minutes)</option>
+<option value="110">110 (1 Hour And 50 Minutes)</option>
+<option value="115">115 (1 Hour And 55 Minutes)</option>
+<option value="120">120 (2 Hours)</option>
+<option value="125">125 (2 Hours And 5 Minutes)</option>
+<option value="130">130 (2 Hours And 10 Minutes)</option>
+<option value="135">135 (2 Hours And 15 Minutes)</option>
+<option value="140">140 (2 Hours And 20 Minutes)</option>
+<option value="145">145 (2 Hours And 25 Minutes)</option>
+<option value="150">150 (2 Hours And 30 Minutes)</option>
+<option value="155">155 (2 Hours And 35 Minutes)</option>
+<option value="160">160 (2 Hours And 40 Minutes)</option>
+<option value="165">165 (2 Hours And 45 Minutes)</option>
+<option value="170">170 (2 Hours And 50 Minutes)</option>
+<option value="175">175 (2 Hours And 55 Minutes)</option>   
+<option value="180">180 (3 Hours)</option>
+<option value="185">185 (3 Hours And 5 Minutes)</option>
+<option value="190">190 (3 Hours And 10 Minutes)</option>
+<option value="195">195 (3 Hours And 15 Minutes)</option>
+<option value="200">200 (3 Hours And 20 Minutes)</option>
+<option value="205">205 (3 Hours And 25 Minutes)</option>
+<option value="210">210 (3 Hours And 30 Minutes)</option>
+<option value="215">215 (3 Hours And 35 Minutes)</option>
+<option value="220">220 (3 Hours And 40 Minutes)</option>
+<option value="225">225 (3 Hours And 45 Minutes)</option>
+<option value="230">230 (3 Hours And 50 Minutes)</option>
+<option value="235">235 (3 Hours And 55 Minutes)</option>
+<option value="240">240 (4 Hours)</option>
+<option value="245">245 (4 Hours And 5 Minutes)</option>
+<option value="250">250 (4 Hours And 10 Minutes)</option>
+<option value="255">255 (4 Hours And 15 Minutes)</option>
+<option value="260">260 (4 Hours And 20 Minutes)</option>
+<option value="265">265 (4 Hours And 25 Minutes)</option>
+<option value="270">270 (4 Hours And 30 Minutes)</option>
+<option value="275">275 (4 Hours And 35 Minutes)</option>
+<option value="280">280 (4 Hours And 40 Minutes)</option>
+<option value="285">285 (4 Hours And 45 Minutes)</option>
+<option value="290">290 (4 Hours And 50 Minutes)</option>
+<option value="295">295 (4 Hours And 55 Minutes)</option>
+<option value="300">300 (5 Hours)</option>
+<option value="305">305 (5 Hours And 5 Minutes)</option>
+<option value="310">310 (5 Hours And 10 Minutes)</option>
+<option value="315">315 (5 Hours And 15 Minutes)</option>
+<option value="320">320 (5 Hours And 20 Minutes)</option>
+<option value="325">325 (5 Hours And 25 Minutes)</option>
+<option value="330">330 (5 Hours And 30 Minutes)</option>
+<option value="335">335 (5 Hours And 35 Minutes)</option>
+<option value="340">340 (5 Hours And 40 Minutes)</option>
+<option value="345">345 (5 Hours And 45 Minutes)</option>
+<option value="350">350 (5 Hours And 50 Minutes)</option>
+<option value="355">355 (5 Hours And 55 Minutes)</option>
+<option value="360">360 (6 Hours)</option>
+<option value="365">365 (6 Hours And 5 Minutes)</option>
+<option value="370">370 (6 Hours And 10 Minutes)</option>
+<option value="375">375 (6 Hours And 15 Minutes)</option>
+<option value="380">380 (6 Hours And 20 Minutes)</option>
+<option value="385">385 (6 Hours And 25 Minutes)</option>
+<option value="390">390 (6 Hours And 30 Minutes)</option>
+<option value="395">395 (6 Hours And 35 Minutes)</option>
+<option value="400">400 (6 Hours And 40 Minutes)</option>
+<option value="405">405 (6 Hours And 45 Minutes)</option>
+<option value="410">410 (6 Hours And 50 Minutes)</option>
+<option value="415">415 (6 Hours And 55 Minutes)</option>
+<option value="420">420 (7 Hours)</option>
+<option value="425">425 (7 Hours And 5 Minutes)</option>
+<option value="430">430 (7 Hours And 10 Minutes)</option>
+<option value="435">435 (7 Hours And 15 Minutes)</option>
+<option value="440">440 (7 Hours And 20 Minutes)</option>
+<option value="445">445 (7 Hours And 25 Minutes)</option>
+<option value="450">450 (7 Hours And 30 Minutes)</option>
+<option value="455">455 (7 Hours And 35 Minutes)</option>
+<option value="460">460 (7 Hours And 40 Minutes)</option>
+<option value="465">465 (7 Hours And 45 Minutes)</option>
+<option value="470">470 (7 Hours And 50 Minutes)</option>
+<option value="475">475 (7 Hours And 55 Minutes)</option>
+<option value="480">480 (8 Hours)</option>
+                        </select>
+                    </li>
+                    <li>
+                        <h3>Confidence Level</h3>
+                        <select id="confidence">
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                        </select>
+                    </li>
+                
+
+            <!-- Centered GeoJSON output box -->
+            <div id="top-right-square" role="dialog" aria-modal="true" aria-hidden="true">
+                <div class="geojson-header">
+                    <button id="close-geojson-btn" class="cancel-btn" type="button">Exit</button>
+                    <button id="copy-geojson-btn" class="copy-btn" type="button">Copy</button>
+                </div>
+                <div id="copy-feedback">Copied</div>
+                <pre id="geojson-pre" aria-live="polite"></pre>
+            </div>
+
+            <!-- Radar UI removed -->
+
+            <!-- Edit Description Modal -->
+            <div id="editDescriptionModal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;align-items:center;justify-content:center;">
+                <div class="modal-content" id="editDescriptionModalContent">
+                    <div class="modal-drag-handle" id="editDescriptionDragHandle">
+                        <span class="modal-drag-handle-text">Drag me around</span>
+                    </div>
+                    <div class="modal-content-inner">
+                        <h3>Edit Description</h3>
+                        <textarea id="editDescriptionTextarea" aria-label="Edit Eye Watch Description"></textarea>
+                        <div class="modal-buttons">
+                            <button id="cancelDescriptionBtn" type="button">Cancel</button>
+                            <button id="sendDescriptionBtn" type="button" class="primary">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Attribution removed -->
+            <div id="colorbar-wrapper">
+                <div class="colorbar" id="colorbar-main"></div>
+                <div class="colorbar hidden" id="colorbar-split"></div>
+            </div>
+        </div>
+    </body>
+</html>                        <option value="Cruise Haynes">Cruise Haynes</option>
+                          <option value="SamWX">SamWX</option>
+                          <option value="RandomTexanGuy">RandomTexanGuy</option>
+                          <option value="Westins Weather Wise">Westins Weather Wise</option>
+                          <option value="RedBucketPlz">RedBucketPlz</option>
+                          <option value="Storm Watcher Jack">Storm Watcher Jack</option>
+                          <option value="GoosemanYT">GoosemanYT</option>
+                          <option value="Asia WX">Asia WX</option>
+                          <option value="BrodyWx">BrodyWx</option>
+                          <option value="OtterWx">OtterWx</option>
+                          <option value="Levi Stefanick">Levi Stefanick</option>
+                          <option value="Camp">Camp</option>
+                          <option value="Jesse Tarkalson">Jesse Tarkalson</option>
+                          <option value="Outbreak Lucas">Outbreak Lucas</option>
+                          <option value="Lucas Stegman">Lucas Stegman</option>
+                          <option value="Zane Ferguson">Zane Ferguson</option>
+                          <option value="DavisDoesWeather">DavisDoesWeather</option>
+                          <option value="MisterTwisterWX">MisterTwisterWX</option>
+                          <option value="Vincent Lilly (Mr. Storm)">Vincent Lilly (Mr. Storm)</option>
+                          <option value="HaileyWX">HaileyWX</option>
+                          <option value="AidenTND">AidenTND</option>
+                          <option value="WxWaren">WxWaren</option>
+                          <option value="Oish">Oish</option>
+                          <option value="Roge">Roge</option>
+                          <option value="Pez">Pez</option>
+                          <option value="Josh Brinks (PA Storm Trackerz)">Josh Brinks (PA Storm Trackerz)</option>
+                          <option value="The Weather Warrior">The Weather Warrior</option>
+                          <option value="Crumbz">Crumbz</option>
+                          <option value="SniperWX">SniperWX</option>
+                          <option value="Bill Bolton">Bill Bolton</option>
+                          <option value="PJ">PJ</option>
+                          <option value="Jackson Salyers">Jackson Salyers</option>
+                          <option value="HyperWX">HyperWX</option>
+                        </select>
+                    </li>
+                    <li>
+                        <button id="applyWarningSettings">Apply Warning Settings</button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Alert Color Change Menu -->
+            <div id="alertColorMenu">
+                <button id="closeAlertColorMenuBtn" style="position:absolute;top:8px;right:8px;background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;">&times;</button>
+                <h3>Change Alert Colors</h3>
+                <div id="alertColorList"></div>
+            </div>
+
+            <!-- Centered GeoJSON output box -->
+            <div id="top-right-square" role="dialog" aria-modal="true" aria-hidden="true">
+                <div class="geojson-header">
+                    <button id="close-geojson-btn" class="cancel-btn" type="button">Exit</button>
+                    <button id="copy-geojson-btn" class="copy-btn" type="button">Copy</button>
+                </div>
+                <div id="copy-feedback">Copied</div>
+                <pre id="geojson-pre" aria-live="polite"></pre>
+            </div>
+
+            <!-- Radar UI removed -->
+
+            <!-- Edit Description Modal -->
+            <div id="editDescriptionModal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;align-items:center;justify-content:center;">
+                <div class="modal-content" id="editDescriptionModalContent">
+                    <div class="modal-drag-handle" id="editDescriptionDragHandle">
+                        <span class="modal-drag-handle-text">Drag me around</span>
+                    </div>
+                    <div class="modal-content-inner">
+                        <h3>Edit Description</h3>
+                        <textarea id="editDescriptionTextarea" aria-label="Edit Eye Watch Description"></textarea>
+                        <div class="modal-buttons">
+                            <button id="cancelDescriptionBtn" type="button">Cancel</button>
+                            <button id="sendDescriptionBtn" type="button" class="primary">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="colorbar-wrapper">
+                <div class="colorbar" id="colorbar-main"></div>
+                <div class="colorbar hidden" id="colorbar-split"></div>
+            </div>
+
+            <div id="mrms-panel" aria-label="MRMS radar controls">
+                <div class="mrms-panel-title">MRMS Radar</div>
+                <div id="status-text">Initializing…</div>
+                <div id="valid-time"></div>
+
+                <label class="mrms-row" for="opacity">
+                    <span>Opacity</span>
+                    <span id="opacity-val">70%</span>
+                </label>
+                <input id="opacity" type="range" min="0" max="100" value="70" />
+
+                <label class="mrms-row" for="min-dbz">
+                    <span>Min dBZ</span>
+                    <span id="min-dbz-val">5</span>
+                </label>
+                <input id="min-dbz" type="range" min="-30" max="70" value="5" />
+
+                <label class="mrms-toggle" for="auto-refresh">
+                    <input id="auto-refresh" type="checkbox" checked />
+                    Auto refresh
+                </label>
+
+                <div class="mrms-buttons">
+                    <button id="refresh-btn" type="button">Refresh</button>
+                    <button id="import-palette-btn" type="button">Import PAL</button>
+                    <input id="palette-file-input" type="file" accept=".pal" hidden />
+                </div>
+
+                <div class="mrms-buttons player-controls">
+                    <button id="prev-frame-btn" type="button">◀</button>
+                    <button id="play-pause-btn" type="button">Play</button>
+                    <button id="next-frame-btn" type="button">▶</button>
+                </div>
+
+                <input id="frame-slider" type="range" min="0" max="0" value="0" />
+                <div id="frame-label">Frame 0 / 0</div>
+                <div id="legend-bar"></div>
+            </div>
+        </div>
+
+        <script src="radar-data-with-maptiler/libs/pako.min.js"></script>
+        <script src="radar-data-with-maptiler/libs/upng.js"></script>
+        <script src="alertzones.js" defer></script>
+        <script src="map.js" defer></script>
+        <script src="script.js" defer></script>
+        <script src="mrms.js" defer></script>
+    </body>
+</html>
