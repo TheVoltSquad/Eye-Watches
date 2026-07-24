@@ -6997,41 +6997,6 @@ function buildEyeWatchJSON() {
         'line-opacity': 0.5
       }
     }, 'nws-alert-polygons-fill'); // Insert before alert polygons
-
-    // Add county labels
-    map.addLayer({
-      id: 'county-labels',
-      type: 'symbol',
-      source: 'us-counties',
-      layout: {
-        'text-field': [
-          'concat',
-          ['get', 'NAME'],
-          ['case',
-            ['==', ['get', 'STATE'], '22'],
-            ' Parish',
-            ' County'
-          ]
-        ],
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-size': [
-      'interpolate', ['linear'], ['zoom'],
-      6, 10,
-      8, 14,
-      10, 16,
-      12, 18
-        ],
-        'text-anchor': 'center',
-        'text-allow-overlap': false
-      },
-      paint: {
-        'text-color': '#444',
-        'text-halo-color': '#fff',
-        'text-halo-width': 1.5
-      },
-      minzoom: 7
-    });
-
     // RainViewer immediate fetch removed
     // Removed radar data fetching logic
 

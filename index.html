@@ -19,8 +19,6 @@
         <!-- Tabler Icons (non-blocking preload) -->
         <link rel="preload" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.35.0/dist/tabler-icons.min.css" as="style" onload="this.rel='stylesheet'">
         <noscript><link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.35.0/dist/tabler-icons.min.css" rel="stylesheet"></noscript>
-        <!-- Entry point (module scripts are deferred by default) -->
-        <script type="module" src="src/entry.js"></script>
         <!-- Onest font (non-blocking preload) -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -426,8 +424,8 @@
             </div>
         </div>
 
-        <script src="radar-data-with-maptiler/libs/pako.min.js"></script>
-        <script src="radar-data-with-maptiler/libs/upng.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
         <script src="alertzones.js" defer></script>
         <script src="map.js" defer></script>
         <script src="script.js" defer></script>
